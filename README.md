@@ -230,6 +230,12 @@ Every [GitHub release](https://github.com/alii13/permlock/releases) has binaries
 gh attestation verify permlock-linux-x64 --repo alii13/permlock
 ```
 
+The macOS binaries are signed but not notarized. `npx`, `npm install` and `cargo install` are not affected. If you download a binary with a browser, clear the quarantine flag once before running it:
+
+```
+xattr -d com.apple.quarantine permlock-darwin-arm64
+```
+
 ## Commands
 
 | Command | Does |

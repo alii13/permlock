@@ -22,7 +22,9 @@
     "permlock": "bin/permlock.js"
   },
   "files": [
-    "bin"
+    "bin",
+    "LICENSE-MIT",
+    "LICENSE-APACHE"
   ],
   "engines": {
     "node": ">=18"

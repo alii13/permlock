@@ -8,7 +8,9 @@ os="${target%-*}" cpu="${target#*-}"
 exe=permlock
 [ "$os" = win32 ] && exe=permlock.exe
 
+root="$(cd "$(dirname "$0")/.." && pwd)"
 mkdir -p "$out/bin"
+cp "$root/LICENSE-MIT" "$root/LICENSE-APACHE" "$out/"
 cp "$binary" "$out/bin/$exe"
 chmod +x "$out/bin/$exe"
 cat >"$out/package.json" <<EOF
@@ -23,7 +25,7 @@ cat >"$out/package.json" <<EOF
   "license": "MIT OR Apache-2.0",
   "os": ["$os"],
   "cpu": ["$cpu"],
-  "files": ["bin"],
+  "files": ["bin", "LICENSE-MIT", "LICENSE-APACHE"],
   "capabilities": []
 }
 EOF

@@ -108,10 +108,10 @@ jobs:
             ext=""
             [ "$target" = win32-x64 ] && ext=".exe"
             bash scripts/npm-platform.sh "$target" "$version" "dist/permlock-$target$ext" "npm-out/$target"
-            npm publish "npm-out/$target" --provenance --access public
+            npm publish "./npm-out/$target" --provenance --access public
           done
           cp README.md LICENSE-MIT LICENSE-APACHE npm/permlock/
-          npm publish npm/permlock --provenance --access public
+          npm publish ./npm/permlock --provenance --access public
       - uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
         if: env.CARGO_TOKEN == ''
         id: crates-auth
