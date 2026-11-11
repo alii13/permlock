@@ -1,6 +1,6 @@
 {
   "name": "permlock",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A lockfile for what your dependencies can do. Fails the pull request when an update asks for new powers.",
   "keywords": [
     "security",
@@ -33,10 +33,10 @@
     "exec"
   ],
   "optionalDependencies": {
-    "permlock-darwin-arm64": "0.1.0",
-    "permlock-darwin-x64": "0.1.0",
-    "permlock-linux-arm64": "0.1.0",
-    "permlock-linux-x64": "0.1.0",
-    "permlock-win32-x64": "0.1.0"
+    "permlock-darwin-arm64": "0.1.1",
+    "permlock-darwin-x64": "0.1.1",
+    "permlock-linux-arm64": "0.1.1",
+    "permlock-linux-x64": "0.1.1",
+    "permlock-win32-x64": "0.1.1"
   }
 }

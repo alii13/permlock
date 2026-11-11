@@ -34,7 +34,18 @@ pub struct Facts {
     pub builtins: BTreeSet<String>,
     /// static specifiers Endo follows
     pub imports: Vec<String>,
+    /// string-literal `import()` specifiers; followed for the report, not the policy
+    pub dynamic: Vec<String>,
     pub seen: Vec<Seen>,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Kind {
+    Script,
+    Module,
+    Jsx,
+    TypeScript,
+    Tsx,
 }
 
 /// Node 26.12 `require('module').builtinModules`; `node:` forms added at lookup.
@@ -200,11 +211,20 @@ const OBJECT_PROTO: &[&str] = &[
 ];
 
 pub fn inspect(source: &str, mjs: bool) -> Result<Facts, String> {
+    inspect_as(source, if mjs { Kind::Module } else { Kind::Script })
+}
+
+/// `inspect` for any kind of source, including TypeScript, whose type-only
+/// references and imports load nothing and are ignored.
+pub fn inspect_as(source: &str, kind: Kind) -> Result<Facts, String> {
+    let mjs = kind != Kind::Script;
     let allocator = Allocator::default();
-    let source_type = if mjs {
-        SourceType::mjs()
-    } else {
-        SourceType::cjs()
+    let source_type = match kind {
+        Kind::Script => SourceType::cjs(),
+        Kind::Module => SourceType::mjs(),
+        Kind::Jsx => SourceType::jsx(),
+        Kind::TypeScript => SourceType::ts(),
+        Kind::Tsx => SourceType::tsx(),
     };
     let options = ParseOptions {
         allow_return_outside_function: true,
@@ -241,8 +261,9 @@ pub fn inspect(source: &str, mjs: bool) -> Result<Facts, String> {
     let mut refs: Vec<(String, NodeId)> = vec![];
     for (name, ids) in scoping.root_unresolved_references() {
         for &id in ids {
-            let node = scoping.get_reference(id).node_id();
-            if !babel_skips(nodes, node) {
+            let reference = scoping.get_reference(id);
+            let node = reference.node_id();
+            if reference.is_value() && !babel_skips(nodes, node) {
                 refs.push((name.to_string(), node));
             }
         }
@@ -285,11 +306,15 @@ pub fn inspect(source: &str, mjs: bool) -> Result<Facts, String> {
                 continue;
             }
             let key = path.join(".");
-            facts.seen.push(Seen {
-                key: key.clone(),
-                builtin: false,
-                line,
-            });
+            if top != "Function"
+                || function_builds_code(&path, chain.parent, nodes.kind(node).span())
+            {
+                facts.seen.push(Seen {
+                    key: key.clone(),
+                    builtin: false,
+                    line,
+                });
+            }
             if PRIMORDIALS.contains(&top.as_str()) {
                 continue;
             }
@@ -306,7 +331,7 @@ pub fn inspect(source: &str, mjs: bool) -> Result<Facts, String> {
     let mut builtins = BTreeSet::new();
     for node in nodes.iter() {
         match node.kind() {
-            AstKind::ImportDeclaration(d) => {
+            AstKind::ImportDeclaration(d) if !type_only_import(d) => {
                 let src = d.source.value.as_str().unwrap_or_default();
                 facts.imports.push(src.to_string());
                 if !is_builtin(src) {
@@ -337,7 +362,7 @@ pub fn inspect(source: &str, mjs: bool) -> Result<Facts, String> {
                     }
                 }
             }
-            AstKind::ExportFromDeclaration(d) => {
+            AstKind::ExportFromDeclaration(d) if !d.export_kind.is_type() => {
                 let src = d.source.value.as_str().unwrap_or_default();
                 facts.imports.push(src.to_string());
                 if !is_builtin(src) {
@@ -354,7 +379,7 @@ pub fn inspect(source: &str, mjs: bool) -> Result<Facts, String> {
                     };
                 }
             }
-            AstKind::ExportAllDeclaration(d) => {
+            AstKind::ExportAllDeclaration(d) if !d.export_kind.is_type() => {
                 let src = d.source.value.as_str().unwrap_or_default();
                 facts.imports.push(src.to_string());
                 if is_builtin(src) {
@@ -364,14 +389,13 @@ pub fn inspect(source: &str, mjs: bool) -> Result<Facts, String> {
             }
             AstKind::ImportExpression(e) => {
                 // report only: LavaMoat's builtin inspection does not see dynamic import()
-                if let Expression::StringLiteral(s) = &e.source
-                    && is_builtin(s.value.as_str().unwrap_or_default())
-                {
-                    facts.seen.push(seen_builtin(
-                        s.value.as_str().unwrap_or_default(),
-                        &lines,
-                        e.span,
-                    ));
+                if let Expression::StringLiteral(s) = &e.source {
+                    let src = s.value.as_str().unwrap_or_default();
+                    if is_builtin(src) {
+                        facts.seen.push(seen_builtin(src, &lines, e.span));
+                    } else {
+                        facts.dynamic.push(src.to_string());
+                    }
                 }
             }
             AstKind::CallExpression(call) => {
@@ -394,6 +418,66 @@ pub fn inspect(source: &str, mjs: bool) -> Result<Facts, String> {
     }
     facts.builtins = reduce_strings(builtins);
     Ok(facts)
+}
+
+/// Whether a reference to the global `Function` can build code from a string. Calling
+/// or constructing it can, and so can handing it on, since the receiver can call it.
+/// Comparing it, `instanceof`, a Vue prop type, and borrowing `Function.prototype`
+/// methods cannot.
+fn function_builds_code(path: &[String], parent: Option<AstKind>, span: Span) -> bool {
+    if path.len() > 1 {
+        return !(path[1] == "prototype" && path.get(2).is_none_or(|p| p != "constructor"));
+    }
+    match parent {
+        Some(AstKind::BinaryExpression(_) | AstKind::ArrayExpression(_)) => false,
+        Some(AstKind::ObjectProperty(p)) => p.value.span() != span,
+        _ => true,
+    }
+}
+
+/// `import type { A } from "x"`, or `import { type A } from "x"`, which TypeScript removes.
+fn type_only_import(d: &oxc::ast::ast::ImportDeclaration) -> bool {
+    if d.import_kind.is_type() {
+        return true;
+    }
+    let specs = d.specifiers.as_ref().map_or(&[][..], |s| s.as_slice());
+    !specs.is_empty()
+        && specs.iter().all(|s| {
+            matches!(s, ImportDeclarationSpecifier::ImportSpecifier(i) if i.import_kind.is_type())
+        })
+}
+
+/// The `<script>` blocks of a Vue single-file component, each with the number of
+/// lines before it and whether it is TypeScript.
+pub fn vue_scripts(source: &str) -> Vec<(u32, Kind, &str)> {
+    let mut out = vec![];
+    let mut rest = 0;
+    while let Some(open) = source[rest..].find("<script").map(|i| i + rest) {
+        let Some(tag_end) = source[open..].find('>').map(|i| i + open) else {
+            break;
+        };
+        let attrs = &source[open + "<script".len()..tag_end];
+        let body_start = tag_end + 1;
+        let Some(close) = source[body_start..]
+            .find("</script>")
+            .map(|i| i + body_start)
+        else {
+            break;
+        };
+        let lang = ["lang=\"", "lang='"].iter().find_map(|q| {
+            let start = attrs.find(q)? + q.len();
+            Some(&attrs[start..start + attrs[start..].find(['"', '\''])?])
+        });
+        let kind = match lang {
+            Some("ts") => Kind::TypeScript,
+            Some("tsx") => Kind::Tsx,
+            _ => Kind::Module,
+        };
+        let offset = source[..body_start].matches('\n').count() as u32;
+        out.push((offset, kind, &source[body_start..close]));
+        rest = close + "</script>".len();
+    }
+    out
 }
 
 fn seen_builtin(src: &str, lines: &LineIndex, span: Span) -> Seen {
@@ -793,6 +877,52 @@ mod tests {
                 "path"
             ]
         );
+    }
+
+    #[test]
+    fn function_counts_only_where_it_can_build_code() {
+        let src = "new Function('a'); Function('b'); const F = Function; use(Function); Function.call(null, 'c');
+            x instanceof Function; t !== Function; [Function, Array]; ({ type: Function }); Function.prototype.toString.call(f);
+            Function.prototype.apply.call(f, g, h);";
+        let keys: Vec<String> = inspect(src, true)
+            .unwrap()
+            .seen
+            .into_iter()
+            .map(|s| s.key)
+            .filter(|k| k.starts_with("Function"))
+            .collect();
+        assert_eq!(
+            keys,
+            [
+                "Function",
+                "Function",
+                "Function",
+                "Function",
+                "Function.call"
+            ]
+        );
+    }
+
+    #[test]
+    fn typescript_types_load_nothing() {
+        let src = "import type { A } from 'a'; import { type B } from 'b'; import { c } from 'c';
+            export type { D } from 'd'; let s: WebSocket; let f: typeof fetch; process.env.X;
+            const lazy = () => import('e');";
+        let f = inspect_as(src, Kind::TypeScript).unwrap();
+        assert_eq!(f.imports, ["c"]);
+        assert_eq!(f.dynamic, ["e"]);
+        let keys: Vec<&str> = f.seen.iter().map(|s| s.key.as_str()).collect();
+        assert_eq!(keys, ["process.env.X"]);
+    }
+
+    #[test]
+    fn vue_script_blocks_keep_their_lines() {
+        let sfc = "<template>\n  <p/>\n</template>\n<script setup lang=\"ts\">\nimport x from 'x'\n</script>\n<script>\nexport default {}\n</script>\n";
+        let blocks = vue_scripts(sfc);
+        assert_eq!(blocks.len(), 2);
+        assert_eq!((blocks[0].0, blocks[0].1), (3, Kind::TypeScript));
+        assert_eq!(blocks[0].2.trim(), "import x from 'x'");
+        assert_eq!(blocks[1].1, Kind::Module);
     }
 
     #[test]

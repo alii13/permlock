@@ -117,7 +117,19 @@ fn analyze_dir(dir: &Path, o: &Opts) -> Result<Analysis, String> {
         None => analyze::entries(&pkgs[0]),
     };
     let facts = analyze::analyze(&pkgs, &entries);
+    if facts.iter().all(|f| f.files == 0) {
+        eprintln!(
+            "permlock: no entry point found in {}, so no code was read and every package looks pure.\n  Pass the file your app starts from, for example: --entry src/main.ts",
+            dir.display()
+        );
+    }
     Ok(Analysis { pkgs, facts })
+}
+
+impl Analysis {
+    fn files(&self) -> usize {
+        self.facts.iter().map(|f| f.files).sum()
+    }
 }
 
 fn lavamoat_policy(dir: &Path, a: &Analysis) -> Result<String, String> {
@@ -141,8 +153,9 @@ fn write(path: &Path, text: String) -> Result<(), String> {
     Ok(())
 }
 
-/// Writes permlock.json (and the LavaMoat policy when asked) and returns the report.
-fn lock_everything(dir: &Path, o: &Opts) -> Result<Value, String> {
+/// Writes permlock.json (and the LavaMoat policy when asked) and returns the report
+/// and how many files were read.
+fn lock_everything(dir: &Path, o: &Opts) -> Result<(Value, usize), String> {
     let a = analyze_dir(dir, o)?;
     let lock = report::build(&a.pkgs, &a.facts);
     write(&o.lock(dir), pretty(&lock))?;
@@ -150,20 +163,28 @@ fn lock_everything(dir: &Path, o: &Opts) -> Result<Value, String> {
         let out = o.out.clone().unwrap_or_else(|| dir.to_path_buf());
         write(&out.join(LAVAMOAT_POLICY), lavamoat_policy(dir, &a)?)?;
     }
-    Ok(lock)
+    Ok((lock, a.files()))
 }
 
 fn generate(o: &Opts) -> Result<ExitCode, String> {
-    let lock = lock_everything(&o.dir_at(0), o)?;
+    let (lock, files) = lock_everything(&o.dir_at(0), o)?;
     let n = lock["packages"].as_object().map_or(0, |p| p.len());
-    println!("{n} package{} locked", plural(n));
+    println!(
+        "{n} package{} locked, read {files} file{}",
+        plural(n),
+        plural(files)
+    );
     Ok(ExitCode::SUCCESS)
 }
 
 fn init(o: &Opts) -> Result<ExitCode, String> {
-    let lock = lock_everything(&o.dir_at(0), o)?;
+    let (lock, files) = lock_everything(&o.dir_at(0), o)?;
     let n = lock["packages"].as_object().map_or(0, |p| p.len());
-    println!("\n  {n} package{} locked\n", plural(n));
+    println!(
+        "\n  {n} package{} locked, read {files} file{}\n",
+        plural(n),
+        plural(files)
+    );
     print!("{}", report::summary(&lock));
     println!(
         "\n  next: commit {LOCK}, then add one step to your workflow after installing dependencies:\n\n    - uses: {ACTION}\n\n✓ nothing fails until a package asks for more."
