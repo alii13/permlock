@@ -157,7 +157,7 @@ Keep it true in CI:
 
 ## How it works
 
-permlock never runs package code. It starts at your package.json and walks `node_modules` the way Node resolves imports, so any install that produces a `node_modules` folder should work. The tests cover npm and pnpm layouts. It follows only the modules reachable from your entry points, parses each one with [oxc](https://oxc.rs), and turns every free identifier and builtin import into a path like `process.env.HOME` or `node:fs`. The vocabulary above maps those paths to nine classes. The output is sorted JSON, so the diff in a pull request shows the change in powers and nothing else.
+permlock never runs package code. It starts at your package.json and walks `node_modules` the way Node resolves imports, so any install that produces a `node_modules` folder should work. The tests cover npm and pnpm layouts. It follows only the modules reachable from your entry points, parses each one with [oxc](https://oxc.rs), and turns every free identifier and builtin import into a path like `process.env.HOME` or `node:fs`. Your own code can be TypeScript or Vue: permlock reads `.ts`, `.tsx` and `.jsx` files and the `<script>` blocks of `.vue` files, resolves `paths` aliases from your tsconfig, skips type-only imports, and follows lazy `import()` calls. Entry points come from package.json (`exports`, `main`, `bin`) or from `<script type="module">` tags in `index.html`, which covers Vite apps with no flags. If it finds no entry point it says so; pass `--entry src/main.ts` or similar. The vocabulary above maps those paths to nine classes. The output is sorted JSON, so the diff in a pull request shows the change in powers and nothing else.
 
 ## LavaMoat compatibility
 
@@ -194,6 +194,8 @@ permlock reads code; it does not run it. Here is each blind spot and what permlo
 - **Native addons.** Reported as `native` when a `.node` file is loaded or a `binding.gyp` is present. What the compiled code does is opaque.
 - **Install scripts.** Reported as `install`, never blocked. Use `npm ci --ignore-scripts` or pnpm's build allowlist to stop them.
 - **Bundled code.** A bundle has no package boundaries, so permlock reads `node_modules`, not your build output.
+- **Browser builds.** permlock resolves each package with Node's conditions, so for a frontend it reads the Node build. You may see `process.env` reads that your bundler replaces at build time.
+- **Bundler-only aliases.** Aliases that live only in `vite.config` or a webpack config are not read. Put them in tsconfig `paths` as well, which TypeScript needs anyway.
 - **Yarn Plug'n'Play** installs have no `node_modules` folder and are not supported.
 
 If you find a way past permlock that is not on this list, please [report it privately](SECURITY.md).

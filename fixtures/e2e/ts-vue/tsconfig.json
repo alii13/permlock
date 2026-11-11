@@ -1,0 +1,5 @@
+{
+  // the app config holds the aliases, like Vite's default template
+  "files": [],
+  "references": [{ "path": "./tsconfig.app.json" }]
+}

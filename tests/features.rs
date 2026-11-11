@@ -300,3 +300,53 @@ fn the_npm_wrapper_runs_the_platform_binary_and_declares_itself_honestly() {
     let v = run(&["verify", &root().join("npm/permlock").display().to_string()]);
     assert_eq!(v.status.code(), Some(0), "{}", text(&v));
 }
+
+#[test]
+fn typescript_vue_aliases_and_lazy_imports_are_all_read() {
+    let out = temp("ts-vue");
+    let o = run(&["generate", &e2e("ts-vue"), "--out", s(&out)]);
+    assert!(o.status.success(), "{}", text(&o));
+    assert!(text(&o).contains("read 6 files"), "{}", text(&o));
+    let p = json(&out.join("permlock.json"))["packages"].clone();
+    let via = |pkg: &str, class: &str| p[pkg]["observed"][class][0]["via"].clone();
+    assert_eq!(
+        via("fetcher", "net"),
+        "fetch",
+        "reached through @/ alias and a .ts file"
+    );
+    assert_eq!(
+        via("vue-dep", "net"),
+        "WebSocket",
+        "reached from a .vue script block"
+    );
+    assert_eq!(
+        via("lazy", "env"),
+        "process.env",
+        "reached by a dynamic import()"
+    );
+    assert_eq!(
+        p["typedep"]["observed"],
+        serde_json::json!({}),
+        "type-only imports load no code"
+    );
+
+    let app = copy(&e2e("ts-vue"), "ts-vue-declare");
+    assert!(run(&["declare", s(&app)]).status.success());
+    assert_eq!(
+        json(&app.join("package.json"))["capabilities"],
+        serde_json::json!([]),
+        "a WebSocket type is not a use"
+    );
+}
+
+#[test]
+fn no_entry_point_is_a_loud_warning_not_a_silent_pass() {
+    let dir = temp("no-entry");
+    std::fs::write(
+        dir.join("package.json"),
+        r#"{"name":"app","version":"1.0.0"}"#,
+    )
+    .unwrap();
+    let o = run(&["init", s(&dir)]);
+    assert!(text(&o).contains("no entry point found"), "{}", text(&o));
+}

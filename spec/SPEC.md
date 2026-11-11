@@ -70,7 +70,8 @@ An empty list means the package needs nothing. A missing field means the package
 3. `observed` holds one array per class. Each item is the earliest place a vocabulary entry matched: `file` relative to the package, 1-based `line`, and `via`, the entry that matched. `line` is 0 for a whole file or a package.json script.
 4. `declared` copies the package's own `capabilities` field, or is `null`.
 5. Order is fixed so a git diff of two reports is readable: top-level keys as shown, package names sorted, classes sorted, evidence by file then line, and each evidence item as `file`, `line`, `via`. Output is two-space indented JSON with a trailing newline.
-6. Only modules reachable from a package's entry points are analyzed: `exports` subpaths, `module` or `main`, and `bin`, then everything they import. Dynamic `import()` of a builtin counts.
+6. Only modules reachable from a package's entry points are analyzed: `exports` subpaths, `module` or `main`, `bin`, and the `<script type="module">` sources of the root's `index.html`, then everything they import. String-literal `import()` targets are followed too. TypeScript files and the `<script>` blocks of Vue files are read; type-only imports and references in type positions are not uses. The root's tsconfig `paths` resolve aliases.
+7. A reference to the global `Function` counts as `eval` only where it can build code: called, constructed, or handed on. A comparison, an `instanceof`, an array element, an object property value, and `Function.prototype` methods other than `constructor` do not count.
 
 [`permlock.schema.json`](permlock.schema.json) is the JSON Schema for this file.
 
