@@ -1,6 +1,6 @@
 [package]
 name = "permlock"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 rust-version = "1.97"
 description = "A lockfile for what your dependencies can do. Fails the pull request when an update asks for new powers."
