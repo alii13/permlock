@@ -195,6 +195,7 @@ permlock reads code; it does not run it. Here is each blind spot and what permlo
 - **Install scripts.** Reported as `install`, never blocked. Use `npm ci --ignore-scripts` or pnpm's build allowlist to stop them.
 - **Bundled code.** A bundle has no package boundaries, so permlock reads `node_modules`, not your build output.
 - **Browser builds.** permlock resolves each package with Node's conditions, so for a frontend it reads the Node build. You may see `process.env` reads that your bundler replaces at build time.
+- **Platform-only packages.** Packages that npm installs only on one OS or CPU, like `@esbuild/linux-x64` or `fsevents`, are left out, so the same app gives the same `permlock.json` on a Mac and in CI. They are mostly compiled binaries, which permlock cannot read anyway. The package that pulls them in, like `esbuild`, is still checked.
 - **Bundler-only aliases.** Aliases that live only in `vite.config` or a webpack config are not read. Put them in tsconfig `paths` as well, which TypeScript needs anyway.
 - **Yarn Plug'n'Play** installs have no `node_modules` folder and are not supported.
 
