@@ -118,7 +118,12 @@ jobs:
             ext=""
             [ "$target" = win32-x64 ] && ext=".exe"
             bash scripts/npm-platform.sh "$target" "$version" "dist/permlock-$target$ext" "npm-out/$target"
-            publish "./npm-out/$target"
+            if ! publish "./npm-out/$target"; then
+              # npm's spam filter has blocked this one name; the other four must succeed.
+              [ "$target" = win32-x64 ] || exit 1
+              echo "::warning::permlock-win32-x64 was not published; permlock $version ships without Windows on npm"
+              node -e 'const f = "npm/permlock/package.json"; const p = require("./" + f); delete p.optionalDependencies["permlock-win32-x64"]; require("fs").writeFileSync(f, JSON.stringify(p, null, 2) + "\n")'
+            fi
           done
           cp README.md LICENSE-MIT LICENSE-APACHE npm/permlock/
           publish ./npm/permlock

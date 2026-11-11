@@ -14,7 +14,7 @@ inputs:
     default: "."
   version:
     description: permlock version to run from npm
-    default: "0.1.0"
+    default: "0.1.1"
 
 runs:
   using: composite
