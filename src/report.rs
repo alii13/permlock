@@ -152,11 +152,19 @@ pub fn build(pkgs: &[Package], facts: &[PackageFacts]) -> Value {
 }
 
 /// npm installs a package limited by `os`, `cpu` or `libc` only on matching machines,
-/// so recording it would make the report differ between a laptop and CI.
+/// so recording it would make the report differ between a laptop and CI. Lists that
+/// only exclude (`!win32`), `any` and empty lists install on a Mac and in Linux CI alike.
+// ponytail: a platform-only package's own dependencies are still recorded; real ones
+// are leaf binaries. Skip what is reachable only through them if that ever changes.
 fn platform_only(pkg: &Package) -> bool {
+    let limits = |entry: &str| entry != "any" && !entry.starts_with('!');
     ["os", "cpu", "libc"]
         .iter()
-        .any(|k| pkg.descriptor.get(k).is_some())
+        .any(|k| match &pkg.descriptor[k] {
+            Value::String(entry) => limits(entry),
+            Value::Array(list) => list.iter().filter_map(Value::as_str).any(limits),
+            _ => false,
+        })
 }
 
 /// Plain-words label per class, in the order `init` prints them.
@@ -334,6 +342,28 @@ pub fn render(o: &Outcome, packages: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn platform_only_matches_what_npm_skips() {
+        let only = |descriptor: Value| {
+            platform_only(&Package {
+                canonical: "p".into(),
+                version: "1.0.0".into(),
+                dir: Default::default(),
+                descriptor,
+                deps: Default::default(),
+            })
+        };
+        assert!(only(json!({ "os": ["darwin"] })));
+        assert!(only(json!({ "cpu": ["arm64"] })));
+        assert!(only(json!({ "libc": ["musl"] })));
+        assert!(only(json!({ "os": "darwin" })));
+        // npm installs these on a Mac and in Linux CI alike.
+        assert!(!only(json!({ "os": ["!win32"] })));
+        assert!(!only(json!({ "os": [] })));
+        assert!(!only(json!({ "cpu": ["any"] })));
+        assert!(!only(json!({})));
+    }
 
     fn lock(packages: Value) -> Value {
         json!({ "schema": SCHEMA, "profile": "node", "packages": packages })
