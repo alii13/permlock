@@ -350,3 +350,28 @@ fn no_entry_point_is_a_loud_warning_not_a_silent_pass() {
     let o = run(&["init", s(&dir)]);
     assert!(text(&o).contains("no entry point found"), "{}", text(&o));
 }
+
+#[test]
+fn the_report_is_the_same_on_every_machine() {
+    // npm installs only the optional package that matches the machine, like
+    // @esbuild/darwin-arm64 on a Mac and @esbuild/linux-x64 in CI.
+    let install = |name: &str, os: &str| {
+        let app = copy(&e2e("before"), name);
+        let pkg = app.join("node_modules").join(format!("bin-{os}"));
+        std::fs::create_dir_all(&pkg).unwrap();
+        std::fs::write(
+            pkg.join("package.json"),
+            format!(r#"{{"name":"bin-{os}","version":"1.0.0","os":["{os}"],"cpu":["x64"]}}"#),
+        )
+        .unwrap();
+        let manifest = app.join("package.json");
+        let mut root = json(&manifest);
+        root["optionalDependencies"] =
+            serde_json::json!({ "bin-darwin": "1.0.0", "bin-linux": "1.0.0" });
+        std::fs::write(&manifest, root.to_string()).unwrap();
+        let o = run(&["generate", s(&app)]);
+        assert_eq!(o.status.code(), Some(0), "{}", text(&o));
+        std::fs::read_to_string(app.join("permlock.json")).unwrap()
+    };
+    assert_eq!(install("mac", "darwin"), install("linux", "linux"));
+}

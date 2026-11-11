@@ -130,7 +130,12 @@ pub fn observed(pkg: &Package, f: &PackageFacts) -> serde_json::Map<String, Valu
 }
 
 pub fn build(pkgs: &[Package], facts: &[PackageFacts]) -> Value {
-    let mut ordered: Vec<(&Package, &PackageFacts)> = pkgs.iter().zip(facts).skip(1).collect();
+    let mut ordered: Vec<(&Package, &PackageFacts)> = pkgs
+        .iter()
+        .zip(facts)
+        .skip(1)
+        .filter(|(pkg, _)| !platform_only(pkg))
+        .collect();
     ordered.sort_by(|a, b| a.0.canonical.cmp(&b.0.canonical));
     let packages: serde_json::Map<String, Value> = ordered
         .into_iter()
@@ -144,6 +149,14 @@ pub fn build(pkgs: &[Package], facts: &[PackageFacts]) -> Value {
         })
         .collect();
     json!({ "schema": SCHEMA, "profile": "node", "packages": packages })
+}
+
+/// npm installs a package limited by `os`, `cpu` or `libc` only on matching machines,
+/// so recording it would make the report differ between a laptop and CI.
+fn platform_only(pkg: &Package) -> bool {
+    ["os", "cpu", "libc"]
+        .iter()
+        .any(|k| pkg.descriptor.get(k).is_some())
 }
 
 /// Plain-words label per class, in the order `init` prints them.

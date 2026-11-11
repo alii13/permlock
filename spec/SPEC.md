@@ -66,7 +66,7 @@ An empty list means the package needs nothing. A missing field means the package
 ```
 
 1. `packages` is keyed by canonical name: the cheapest dependency path from the root, names joined with `>`. Cheapest means fewest hops, then the shortest total length of the resolved package locations, then those locations compared in order. This is the naming LavaMoat and Endo use, so names line up with a LavaMoat policy.
-2. Every package reachable from the root's dependencies appears, including those that need nothing, which have `"observed": {}`.
+2. Every package reachable from the root's dependencies appears, including those that need nothing, which have `"observed": {}`. A package whose package.json has `os`, `cpu` or `libc` is left out: npm installs it only on matching machines, so including it would make the report differ between a laptop and CI.
 3. `observed` holds one array per class. Each item is the earliest place a vocabulary entry matched: `file` relative to the package, 1-based `line`, and `via`, the entry that matched. `line` is 0 for a whole file or a package.json script.
 4. `declared` copies the package's own `capabilities` field, or is `null`.
 5. Order is fixed so a git diff of two reports is readable: top-level keys as shown, package names sorted, classes sorted, evidence by file then line, and each evidence item as `file`, `line`, `via`. Output is two-space indented JSON with a trailing newline.
