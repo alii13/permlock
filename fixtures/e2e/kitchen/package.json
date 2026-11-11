@@ -1,0 +1,1 @@
+{"name":"kitchen","version":"1.0.0","main":"index.js","dependencies":{"netpkg":"1","installer":"1","addon":"1","pure":"1","honest":"1","liar":"1"}}

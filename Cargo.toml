@@ -1,0 +1,22 @@
+[package]
+name = "permlock"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+description = "A lockfile for what your dependencies can do. Fails the pull request when an update asks for new powers."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/alii13/permlock"
+homepage = "https://github.com/alii13/permlock"
+readme = "README.md"
+keywords = ["supply-chain", "security", "npm", "lavamoat", "capabilities"]
+categories = ["command-line-utilities", "development-tools"]
+include = ["/src/**", "/spec/capabilities.json", "/README.md", "/LICENSE-MIT", "/LICENSE-APACHE"]
+
+[dependencies]
+oxc = { version = "=0.157.0", features = ["semantic"] }
+serde_json = { version = "=1.0.154", features = ["preserve_order"] }
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

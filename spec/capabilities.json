@@ -1,0 +1,93 @@
+{
+  "profile": "node",
+  "version": "0",
+  "classes": {
+    "net": {
+      "builtins": [
+        "net",
+        "tls",
+        "http",
+        "https",
+        "http2",
+        "dns",
+        "dgram"
+      ],
+      "globals": [
+        "fetch",
+        "WebSocket",
+        "XMLHttpRequest",
+        "EventSource",
+        "navigator.sendBeacon"
+      ]
+    },
+    "fs": {
+      "builtins": [
+        "fs",
+        "fs/promises"
+      ],
+      "globals": []
+    },
+    "env": {
+      "builtins": [],
+      "globals": [
+        "process.env"
+      ]
+    },
+    "exec": {
+      "builtins": [
+        "child_process"
+      ],
+      "globals": []
+    },
+    "eval": {
+      "builtins": [
+        "vm"
+      ],
+      "globals": [
+        "eval",
+        "Function",
+        "WebAssembly"
+      ]
+    },
+    "worker": {
+      "builtins": [
+        "worker_threads",
+        "cluster"
+      ],
+      "globals": [
+        "Worker"
+      ]
+    },
+    "native": {
+      "builtins": [],
+      "globals": [
+        "process.dlopen"
+      ],
+      "files": [
+        ".node"
+      ],
+      "package_files": [
+        "binding.gyp"
+      ]
+    },
+    "system": {
+      "builtins": [
+        "os",
+        "inspector",
+        "v8"
+      ],
+      "globals": [
+        "process.kill",
+        "process.exit",
+        "process.chdir"
+      ]
+    },
+    "install": {
+      "scripts": [
+        "preinstall",
+        "install",
+        "postinstall"
+      ]
+    }
+  }
+}

@@ -1,0 +1,169 @@
+{
+  "resources": {
+    "@hono/node-server": {
+      "builtin": {
+        "node:http.STATUS_CODES": true,
+        "node:http.createServer": true,
+        "node:http2.Http2ServerRequest": true,
+        "node:http2.constants": true,
+        "node:stream.Readable": true
+      },
+      "globals": {
+        "AbortController": true,
+        "Blob": true,
+        "Buffer": true,
+        "CloseEvent": true,
+        "ErrorEvent": true,
+        "Event": true,
+        "Headers": true,
+        "MessageEvent": true,
+        "ReadableStream": true,
+        "Request": "write",
+        "Response": "write",
+        "TextDecoder": true,
+        "URL": true,
+        "clearTimeout": true,
+        "console.error": true,
+        "console.info": true,
+        "queueMicrotask": true,
+        "setTimeout": true
+      },
+      "packages": {
+        "hono": true
+      }
+    },
+    "@recall/shared": {
+      "builtin": {
+        "node:crypto.createHash": true
+      },
+      "globals": {
+        "URL": true,
+        "URLSearchParams": true,
+        "process.env": true
+      },
+      "packages": {
+        "drizzle-orm": true,
+        "@recall/shared>postgres": true,
+        "zod": true
+      }
+    },
+    "node-html-parser>css-select": {
+      "packages": {
+        "node-html-parser>css-select>boolbase": true,
+        "node-html-parser>css-select>css-what": true,
+        "node-html-parser>css-select>domutils": true,
+        "node-html-parser>css-select>nth-check": true
+      }
+    },
+    "node-html-parser>css-select>domutils>dom-serializer": {
+      "packages": {
+        "node-html-parser>css-select>domutils>domelementtype": true,
+        "node-html-parser>css-select>domutils>dom-serializer>entities": true
+      }
+    },
+    "node-html-parser>css-select>domhandler": {
+      "packages": {
+        "node-html-parser>css-select>domutils>domelementtype": true
+      }
+    },
+    "node-html-parser>css-select>domutils": {
+      "packages": {
+        "node-html-parser>css-select>domutils>dom-serializer": true,
+        "node-html-parser>css-select>domutils>domelementtype": true,
+        "node-html-parser>css-select>domhandler": true
+      }
+    },
+    "drizzle-orm": {
+      "globals": {
+        "console.log": true
+      },
+      "packages": {
+        "@recall/shared>postgres": true
+      }
+    },
+    "node-html-parser>he": {
+      "globals": {
+        "define": true
+      }
+    },
+    "hono": {
+      "globals": {
+        "File": true,
+        "Headers": true,
+        "MessageEvent": true,
+        "Request": true,
+        "Response": true,
+        "URL": true,
+        "addEventListener": true,
+        "console.error": true
+      }
+    },
+    "node-html-parser": {
+      "packages": {
+        "node-html-parser>css-select": true,
+        "node-html-parser>he": true
+      }
+    },
+    "node-html-parser>css-select>nth-check": {
+      "packages": {
+        "node-html-parser>css-select>boolbase": true
+      }
+    },
+    "@recall/shared>postgres": {
+      "builtin": {
+        "crypto": true,
+        "fs": true,
+        "net": true,
+        "os": true,
+        "perf_hooks.performance": true,
+        "stream": true,
+        "tls": true
+      },
+      "globals": {
+        "Buffer.alloc": true,
+        "Buffer.allocUnsafe": true,
+        "Buffer.byteLength": true,
+        "Buffer.concat": true,
+        "Buffer.from": true,
+        "Cloudflare": true,
+        "URL": true,
+        "clearImmediate": true,
+        "clearTimeout": true,
+        "console.error": true,
+        "console.log": true,
+        "process.env": true,
+        "setImmediate": true,
+        "setTimeout": true
+      }
+    },
+    "tiny-slug": {
+      "globals": {
+        "console.error": true
+      }
+    },
+    "youtube-transcript": {
+      "globals": {
+        "URL": true,
+        "fetch": true
+      }
+    },
+    "zod": {
+      "globals": {
+        "File": true,
+        "JSONSchema": true,
+        "URL": true,
+        "__zod_globalConfig": "write",
+        "__zod_globalRegistry": "write",
+        "atob": true,
+        "btoa": true,
+        "coerce": true,
+        "core": true,
+        "iso": true,
+        "locales": true,
+        "navigator": true,
+        "regexes": true,
+        "util": true
+      }
+    }
+  }
+}

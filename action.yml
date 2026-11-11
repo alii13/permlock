@@ -1,0 +1,28 @@
+name: permlock
+description: Fail a pull request when a dependency update asks for network, files, env, or child processes it did not have before.
+author: permlock
+branding:
+  icon: lock
+  color: yellow
+
+inputs:
+  mode:
+    description: "check for apps (compares with permlock.json), verify for packages (compares with the capabilities field)"
+    default: check
+  working-directory:
+    description: Directory with package.json and installed node_modules
+    default: "."
+  version:
+    description: permlock version to run from npm
+    default: "0.1.0"
+
+runs:
+  using: composite
+  steps:
+    - name: permlock
+      shell: bash
+      env:
+        PERMLOCK_MODE: ${{ inputs.mode }}
+        PERMLOCK_DIR: ${{ inputs.working-directory }}
+        PERMLOCK_VERSION: ${{ inputs.version }}
+      run: bash "$GITHUB_ACTION_PATH/action/run.sh"

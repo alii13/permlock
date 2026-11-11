@@ -1,0 +1,11 @@
+{
+  "schema": "permlock/v0",
+  "profile": "node",
+  "packages": {
+    "tiny-slug": {
+      "version": "1.0.0",
+      "observed": {},
+      "declared": null
+    }
+  }
+}

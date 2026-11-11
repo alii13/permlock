@@ -1,0 +1,83 @@
+{
+  "schema": "permlock/v0",
+  "profile": "node",
+  "packages": {
+    "addon": {
+      "version": "1.0.0",
+      "observed": {
+        "native": [
+          {
+            "file": "binding.gyp",
+            "line": 0,
+            "via": "binding.gyp"
+          },
+          {
+            "file": "build/Release/addon.node",
+            "line": 0,
+            "via": "addon.node"
+          }
+        ]
+      },
+      "declared": null
+    },
+    "honest": {
+      "version": "1.0.0",
+      "observed": {
+        "env": [
+          {
+            "file": "index.js",
+            "line": 1,
+            "via": "process.env"
+          }
+        ]
+      },
+      "declared": [
+        "env"
+      ]
+    },
+    "installer": {
+      "version": "1.0.0",
+      "observed": {
+        "install": [
+          {
+            "file": "package.json",
+            "line": 0,
+            "via": "postinstall"
+          }
+        ]
+      },
+      "declared": null
+    },
+    "liar": {
+      "version": "1.0.0",
+      "observed": {
+        "exec": [
+          {
+            "file": "index.js",
+            "line": 1,
+            "via": "child_process"
+          }
+        ]
+      },
+      "declared": []
+    },
+    "netpkg": {
+      "version": "1.0.0",
+      "observed": {
+        "net": [
+          {
+            "file": "index.js",
+            "line": 1,
+            "via": "fetch"
+          }
+        ]
+      },
+      "declared": null
+    },
+    "pure": {
+      "version": "1.0.0",
+      "observed": {},
+      "declared": null
+    }
+  }
+}

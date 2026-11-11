@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/alii13/permlock/blob/main/spec/permlock.schema.json",
+  "title": "permlock.json",
+  "description": "What each package in a dependency tree was observed touching, grouped by capability class, with evidence.",
+  "type": "object",
+  "required": ["schema", "profile", "packages"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "permlock/v0" },
+    "profile": { "enum": ["node"] },
+    "packages": {
+      "description": "Keyed by canonical name: the shortest dependency path from the root, joined with '>'.",
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/package" }
+    }
+  },
+  "$defs": {
+    "class": {
+      "enum": ["net", "fs", "env", "exec", "eval", "worker", "native", "system", "install"]
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["file", "line", "via"],
+      "additionalProperties": false,
+      "properties": {
+        "file": { "type": "string", "description": "Path relative to the package directory." },
+        "line": { "type": "integer", "minimum": 0, "description": "1-based line, or 0 when the evidence is a whole file or a package.json script." },
+        "via": { "type": "string", "description": "The vocabulary entry that matched, such as fetch, process.env, node:fs, postinstall." }
+      }
+    },
+    "package": {
+      "type": "object",
+      "required": ["version", "observed", "declared"],
+      "additionalProperties": false,
+      "properties": {
+        "version": { "type": "string" },
+        "observed": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/class" },
+          "additionalProperties": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "#/$defs/evidence" }
+          }
+        },
+        "declared": {
+          "description": "The package's own package.json capabilities field, or null when it has none.",
+          "oneOf": [
+            { "type": "null" },
+            { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/class" } }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "schema": "permlock/v0",
+  "profile": "node",
+  "packages": {
+    "tiny-slug": {
+      "version": "1.0.1",
+      "observed": {
+        "env": [
+          {
+            "file": "index.js",
+            "line": 6,
+            "via": "process.env"
+          }
+        ],
+        "fs": [
+          {
+            "file": "index.js",
+            "line": 13,
+            "via": "node:fs"
+          }
+        ],
+        "net": [
+          {
+            "file": "index.js",
+            "line": 29,
+            "via": "fetch"
+          }
+        ]
+      },
+      "declared": null
+    }
+  }
+}

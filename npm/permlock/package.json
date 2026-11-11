@@ -1,0 +1,40 @@
+{
+  "name": "permlock",
+  "version": "0.1.0",
+  "description": "A lockfile for what your dependencies can do. Fails the pull request when an update asks for new powers.",
+  "keywords": [
+    "security",
+    "supply-chain",
+    "permissions",
+    "capabilities",
+    "lockfile",
+    "dependencies",
+    "lavamoat"
+  ],
+  "homepage": "https://github.com/alii13/permlock#readme",
+  "bugs": "https://github.com/alii13/permlock/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alii13/permlock.git"
+  },
+  "license": "MIT OR Apache-2.0",
+  "bin": {
+    "permlock": "bin/permlock.js"
+  },
+  "files": [
+    "bin"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "capabilities": [
+    "exec"
+  ],
+  "optionalDependencies": {
+    "permlock-darwin-arm64": "0.1.0",
+    "permlock-darwin-x64": "0.1.0",
+    "permlock-linux-arm64": "0.1.0",
+    "permlock-linux-x64": "0.1.0",
+    "permlock-win32-x64": "0.1.0"
+  }
+}

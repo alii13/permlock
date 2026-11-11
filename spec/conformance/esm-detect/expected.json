@@ -1,0 +1,19 @@
+{
+  "schema": "permlock/v0",
+  "profile": "node",
+  "packages": {
+    "sneaky": {
+      "version": "1.0.0",
+      "observed": {
+        "net": [
+          {
+            "file": "index.js",
+            "line": 1,
+            "via": "fetch"
+          }
+        ]
+      },
+      "declared": null
+    }
+  }
+}
